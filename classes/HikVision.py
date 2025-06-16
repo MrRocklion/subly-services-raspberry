@@ -1,5 +1,5 @@
 import requests
-from classes.logger_config import logger
+from classes.Logger import logger
 from requests.auth import HTTPDigestAuth
 from datetime import datetime, timezone
 import json

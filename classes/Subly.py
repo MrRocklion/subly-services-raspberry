@@ -1,5 +1,5 @@
 import requests
-from classes.logger_config import logger
+from classes.Logger import logger
 import json
 
 

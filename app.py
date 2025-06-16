@@ -3,7 +3,7 @@ import time
 from datetime import datetime, timedelta
 from classes.HikVision import HikVision
 from classes.Subly import SublyBackend
-from classes.logger_config import logger
+from classes.Logger import logger
 from database.db_manager import SqliteManager
 from dotenv import load_dotenv
 import socketio
