@@ -1,0 +1,69 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Subly Dashboard</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #1e1e2f;
+      color: #f4f4f4;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding-top: 80px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: #00ffff;
+    }
+
+    p {
+      font-size: 1rem;
+      margin-bottom: 2rem;
+      color: #bbbbbb;
+    }
+
+    .button-container {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn {
+      background-color: #2d2d45;
+      color: #f4f4f4;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      text-decoration: none;
+      display: inline-block;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    .btn:hover {
+      background-color: #3a3a5c;
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+  <h1>🛰️ Subly Client Hikvision</h1>
+  <p>App para gestionar equipos HIKVISION</p>
+
+  <div class="button-container">
+    <a href="/upload" class="btn">Cargar Imagen</a>
+    <a href="/users" class="btn">Ver Usuarios</a>
+    <a href="/update-db" class="btn">Actualizar Base de Datos</a>
+  </div>
+</body>
+</html>

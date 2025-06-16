@@ -1,0 +1,266 @@
+<!-- templates/upload.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Cargar Imagen</title>
+    <style>
+        /* Asegurar que padding/border se incluyan en ancho */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #1e1e2f;
+            color: #fff;
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding-top: 40px;
+            margin: 0;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 600px;
+            background-color: #2d2d45;
+            border-radius: 12px;
+            padding: 30px 20px 40px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            color: #00ffff;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        p.description {
+            text-align: center;
+            color: #ccc;
+            margin-bottom: 25px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Buscador de usuario */
+        #search-container {
+            position: relative;
+            width: 100%;
+        }
+
+        #search-container label {
+            display: block;
+            margin-bottom: 6px;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        #user-search {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background-color: #fff;
+            color: #000;
+            font-size: 1rem;
+        }
+
+        #suggestions {
+            position: absolute;
+            top: calc(100% + 2px);
+            left: 0;
+            right: 0;
+            background-color: #fff;
+            color: #000;
+            border: 1px solid #ccc;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+            list-style: none;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 0;
+            padding: 0;
+            z-index: 1000;
+        }
+
+        #suggestions li {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        #suggestions li:hover {
+            background-color: #f0f0f0;
+        }
+
+        /* Input de archivo personalizado */
+        .file-input-wrapper {
+            position: relative;
+            width: 100%;
+            overflow: hidden; /* asegurar que no se salga */
+            border-radius: 4px;
+        }
+
+        .file-input-label {
+            display: block;
+            width: 100%;
+            padding: 10px 14px;
+            background-color: #ff9800;
+            color: #fff;
+            text-align: center;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+            border: 1px solid #e07b00;
+            border-radius: 4px;
+        }
+
+        .file-input-label:hover {
+            background-color: #e68900;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        /* Botón de submit */
+        input[type="submit"] {
+            background-color: #28a745;
+            color: #fff;
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+            width: 100%;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #218838;
+        }
+
+        /* Vista previa */
+        .preview {
+            margin-top: 25px;
+            max-width: 100%;
+            border: 2px solid #00ffff;
+            border-radius: 8px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        a.back-link {
+            display: block;
+            text-align: center;
+            margin-top: 30px;
+            color: #00ffff;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        a.back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Cargar Imagen</h1>
+        <p class="description">Selecciona una imagen y asócialo a un usuario existente.</p>
+
+        <form action="/upload" method="POST" enctype="multipart/form-data">
+            <!-- Buscador de usuario -->
+            <div id="search-container">
+                <label for="user-search">Buscar Usuario:</label>
+                <input type="text" id="user-search" placeholder="Escribe nombre o apellido...">
+                <input type="hidden" id="user" name="user">
+                <ul id="suggestions"></ul>
+            </div>
+
+            <!-- Input de archivo -->
+            <div class="file-input-wrapper">
+                <label class="file-input-label" for="image-input">Seleccionar imagen...</label>
+                <input type="file" id="image-input" name="image" accept="image/*" required>
+            </div>
+
+            <!-- Botón de subir -->
+            <input type="submit" value="Subir Imagen">
+        </form>
+
+        {% if image_url %}
+        <img class="preview" src="{{ image_url }}" alt="Imagen subida">
+        {% endif %}
+
+        <a href="/" class="back-link">⬅ Volver al inicio</a>
+    </div>
+
+    <script>
+        const searchInput = document.getElementById('user-search');
+        const suggestions = document.getElementById('suggestions');
+        const userIdInput = document.getElementById('user');
+        const fileInput = document.getElementById('image-input');
+        const fileLabel = document.querySelector('.file-input-label');
+
+        // Mostrar nombre de archivo seleccionado en la etiqueta
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                fileLabel.textContent = fileInput.files[0].name;
+            } else {
+                fileLabel.textContent = 'Seleccionar imagen...';
+            }
+        });
+
+        // Autocomplete de usuarios
+        searchInput.addEventListener('input', async () => {
+            const q = searchInput.value.trim();
+            suggestions.innerHTML = '';
+            userIdInput.value = '';
+
+            if (q.length < 1) return;
+
+            try {
+                const res = await fetch(`/search-users?q=${encodeURIComponent(q)}`);
+                if (!res.ok) return;
+                const users = await res.json();
+
+                users.forEach(user => {
+                    const li = document.createElement('li');
+                    li.textContent = `${user.name} ${user.lastname}`;
+                    li.addEventListener('click', () => {
+                        searchInput.value = `${user.name} ${user.lastname}`;
+                        userIdInput.value = user.user_id;  // ajustar según campo real
+                        suggestions.innerHTML = '';
+                    });
+                    suggestions.appendChild(li);
+                });
+            } catch (err) {
+                console.error('Error buscando usuarios:', err);
+            }
+        });
+
+        // Ocultar sugerencias al hacer click fuera
+        document.addEventListener('click', (e) => {
+            if (!document.getElementById('search-container').contains(e.target)) {
+                suggestions.innerHTML = '';
+            }
+        });
+    </script>
+</body>
+
+</html>
