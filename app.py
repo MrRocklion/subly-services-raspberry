@@ -89,21 +89,22 @@ def connect():
 def handle_new_subscription(data):
     logger.info('Nueva suscripción recibida: %s', data)
     try:
-        if db.get_subscription_by_user_id(data['user_id']):
-            db.update_subscription_dates(
-                data['user_id'],
-                data['start_date'],
-                data['end_date']
-            )
-            isapi.update_days(data)
-        else:
-            db.insert_subscription(data)
-            if isapi.enroll_user(data):
-                logger.info(f"Usuario {data['user_id']} inscrito correctamente en HikVision.")
-                db.update_data_load_state(data['user_id'], True)
+        if data['tenant_id'] == tenant:
+            if db.get_subscription_by_user_id(data['user_id']):
+                db.update_subscription_dates(
+                    data['user_id'],
+                    data['start_date'],
+                    data['end_date']
+                )
+                isapi.update_days(data)
             else:
-                logger.error(f"Error al inscribir usuario {data['user_id']} en HikVision.")
-                db.update_data_load_state(data['user_id'], False)
+                db.insert_subscription(data)
+                if isapi.enroll_user(data):
+                    logger.info(f"Usuario {data['user_id']} inscrito correctamente en HikVision.")
+                    db.update_data_load_state(data['user_id'], True)
+                else:
+                    logger.error(f"Error al inscribir usuario {data['user_id']} en HikVision.")
+                    db.update_data_load_state(data['user_id'], False)
     except Exception as e:
         logger.error('Error al procesar la nueva suscripción: %s', e)
         return
