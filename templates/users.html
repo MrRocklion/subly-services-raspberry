@@ -1,12 +1,70 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <title>Ver Usuarios</title>
+  <style>
+    body {
+      background-color: #1e1e2f;
+      color: #fff;
+      font-family: sans-serif;
+      padding: 40px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #444;
+      text-align: left;
+    }
+    th {
+      background-color: #2d2d45;
+    }
+    tr:hover {
+      background-color: #3a3a5c;
+    }
+    a {
+      color: #00ffff;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
-<body style="background-color:#1e1e2f; color:#fff; font-family:sans-serif;">
-  <h1>Usuarios registrados</h1>
+<body>
+  <h1>📋 Usuarios registrados</h1>
   <p>Aquí se mostrarán los usuarios registrados en el sistema.</p>
   <a href="/">⬅ Volver al inicio</a>
+
+  {% if usuarios %}
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Apellido</th>
+        <th>Inicio</th>
+        <th>Fin</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in usuarios %}
+      <tr>
+        <td>{{ u.user_id }}</td>
+        <td>{{ u.name }}</td>
+        <td>{{ u.lastname }}</td>
+        <td>{{ u.start_date }}</td>
+        <td>{{ u.end_date }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p>No hay usuarios registrados aún.</p>
+  {% endif %}
 </body>
 </html>

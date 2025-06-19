@@ -34,6 +34,45 @@ subly = SublyBackend(tenant, api_url, username, password)
 isapi = HikVision(isapi_url, isapi_username, isapi_password)
 db = SqliteManager()
 
+def update_db_now():
+    global progress_value
+    try:
+        progress_value=10
+        users = subly.get_users()
+        progress_value=60
+        counter = 0
+        for user in users:
+            total = len(users)
+            counter += 1
+            progress_value_aux = int((counter / total) *30 )
+            progress_value = 70 + progress_value_aux
+            try:
+                if db.get_subscription_by_user_id(user['user_id']):
+                    db.update_subscription_dates(
+                        user['user_id'],
+                        user['start_date'],
+                        user['end_date']
+                    )
+                    isapi.update_days(user)
+                else:
+                    db.insert_subscription(user)
+                    if isapi.enroll_user(user):
+                        logger.info(f"Usuario {user['user_id']} inscrito correctamente en HikVision.")
+                        db.update_data_load_state(user['user_id'], True)
+                    else:
+                        logger.error(f"Error al inscribir usuario {user['user_id']} en HikVision.")
+                        db.update_data_load_state(user['user_id'], False)
+                    
+            except Exception as e:
+                logger.error(f"Error al procesar usuario {user['user_id']}: {e}")
+                continue
+        logger.info(f"Total de usuarios obtenidos de Subly: {len(users)}")
+    except Exception as e:
+        logger.error(f"Error al iniciar la actualización de la base de datos: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+    logger.info("Se finalizo de actualizar o agregar usuarios")
+    return redirect(url_for('index'))
+
 def update_local_database():
     '''Este hilo se encarga de actualizar la db con los usuarios activos de Subly todos los días a las 9PM'''
 
@@ -154,9 +193,6 @@ def upload():
 def get_image(filename):
     return send_from_directory(app.config['DATASET_FOLDER'], filename)
 
-@app.route('/users')
-def users():
-    return render_template('users.html')
 
 @app.route('/search-users')
 def search_users():
@@ -167,6 +203,32 @@ def search_users():
         if query in u['name'].lower() or query in u['lastname'].lower()
     ]
     return jsonify(filtered)
+
+@app.route('/users')
+def mostrar_usuarios():
+    users = db.get_all_subscriptions()
+    print(f"Usuarios obtenidos de la base de datos: {len(users)}")
+    return render_template('users.html', usuarios=users)
+
+
+@app.route('/update')
+def update():
+    global progress_value
+    progress_value = 0
+    return render_template('progress.html')
+
+@app.route('/start-update')
+def start_update():
+    global progress_value
+    update_db_now()
+    return jsonify({"status": "complete"})
+
+@app.route('/progress')
+def get_progress():
+    global progress_value
+    return jsonify({"progress": progress_value})
+
+
 
 if __name__ == '__main__':
     threading.Thread(target=run_socket_client).start()

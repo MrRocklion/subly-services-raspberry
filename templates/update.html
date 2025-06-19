@@ -1,0 +1,31 @@
+<!-- templates/loading.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Actualizando Base de Datos...</title>
+  <style>
+    body {
+      background-color: #1e1e2f;
+      color: white;
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 100px;
+    }
+    img {
+      width: 120px;
+      height: auto;
+      margin-top: 40px;
+    }
+  </style>
+  <script>
+    setTimeout(function() {
+      window.location.href = "/";
+    }, 3000); // Redirige después de 3 segundos (ajustable)
+  </script>
+</head>
+<body>
+  <h2>Actualizando la base de datos...</h2>
+  <img src="https://i.gifer.com/ZZ5H.gif" alt="Loading...">
+</body>
+</html>
