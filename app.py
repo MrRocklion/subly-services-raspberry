@@ -233,4 +233,4 @@ def get_progress():
 
 if __name__ == '__main__':
     threading.Thread(target=run_socket_client).start()
-    app.run(port=5000)
+    app.run(port=8000)

@@ -19,7 +19,7 @@ def disconnect():
     print('❌ Desconectado del servidor')
 
 # Conectar al servidor
-sio.connect('http://localhost:3000')  # cambia el host si es necesario
+sio.connect('http://localhost:4000')  # cambia el host si es necesario
 
 # Mantener el cliente en ejecución
 sio.wait()
