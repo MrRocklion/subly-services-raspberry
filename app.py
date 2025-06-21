@@ -128,7 +128,7 @@ def connect():
 def handle_new_subscription(data):
     logger.info('Nueva suscripción recibida: %s', data)
     try:
-        if data['tenant_id'] == tenant:
+        if data['tenant'] == tenant:
             if db.get_subscription_by_user_id(data['user_id']):
                 db.update_subscription_dates(
                     data['user_id'],
