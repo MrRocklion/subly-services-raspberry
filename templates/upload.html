@@ -203,8 +203,17 @@
             <input type="submit" value="Subir Imagen">
         </form>
 
-        {% if image_url %}
+      {% if image_url and not error %}
         <img class="preview" src="{{ image_url }}" alt="Imagen subida">
+        {% endif %}
+
+        {% if error_image_url %}
+        <img class="preview" src="{{ error_image_url }}" alt="Error al subir imagen">
+        {% endif %}
+        {% if error %}
+        <script>
+            alert("{{ error }}");
+        </script>
         {% endif %}
 
         <a href="/" class="back-link">⬅ Volver al inicio</a>

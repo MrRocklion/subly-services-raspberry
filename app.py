@@ -168,27 +168,37 @@ def index():
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
     image_url = None
+    error = None
+    error_image_url = None
+
     if request.method == 'POST':
         image = request.files.get('image')
         user_id = request.form.get('user')
-        if image:
-            # Extensión original
-            orig_name = secure_filename(image.filename)
-            name, ext = os.path.splitext(orig_name)
+
+        if image and user_id:
             logger.info(f"id detectado: {user_id}")
-            if user_id:
-                new_filename = f"{user_id}{ext}"
-                filepath = os.path.join(app.config['DATASET_FOLDER'], new_filename)
-                image.save(filepath)
-
+            new_filename = f"{secure_filename(user_id)}.jpg"
+            filepath = os.path.join(app.config['DATASET_FOLDER'], new_filename)
+            from PIL import Image
+            try:
+                img = Image.open(image)
+                rgb_img = img.convert('RGB')
+                rgb_img.save(filepath, format='JPEG')
                 image_url = url_for('get_image', filename=new_filename)
-                isapi.enroll_face(user_id)
 
-            #isapi.enroll_face(user_id)
-            
-            
-    return render_template('upload.html', image_url=image_url)
+                result = isapi.enroll_face(user_id)
+                if result is False:
+                    error = "Error al inscribir la cara del usuario. Por favor, inténtelo de nuevo."
+                    error_image_url = url_for('static', filename='upload_failed.jpg')  # ← Tu imagen de error
+            except Exception as e:
+                error = f"Ocurrió un error procesando la imagen: {str(e)}"
+                error_image_url = url_for('static', filename='upload_failed.jpg')
 
+        else:
+            error = "Debe seleccionar una imagen y un usuario válido."
+            error_image_url = url_for('static', filename='upload_failed.jpg')
+
+    return render_template('upload.html', image_url=image_url, error=error, error_image_url=error_image_url)
 
 @app.route('/dataset/<filename>')
 def get_image(filename):

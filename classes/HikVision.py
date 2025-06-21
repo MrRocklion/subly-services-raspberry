@@ -30,6 +30,8 @@ class HikVision():
         except requests.exceptions.RequestException as e:
             logger.error(f"Error al enviar solicitud de inscripcion: {e}")
             return False
+        
+        
     def enroll_face(self, user_id):
         url_face_id = f"{self.api_url}/ISAPI/Intelligent/FDLib/FDSetUp?format=json"
         image_name = str(user_id) +".jpg"
@@ -39,7 +41,7 @@ class HikVision():
         total_path = os.path.join(data_dir, image_name)
         files= [('img',(image_name,open(total_path,'rb'),'image/jpeg'))]
         try:
-            requests.put(
+            result = requests.put(
                     url_face_id,
                     headers={},
                     files=files,
@@ -47,8 +49,12 @@ class HikVision():
                     auth=HTTPDigestAuth(self.user, self.password),
                     verify=False
                 )
-            logger.info(f"Exito Solicitud de inscripcion de cara enviada para el usuario {user_id}.")
-            return True
+            if result.status_code == 200:
+                logger.info(f"Exito Solicitud de inscripcion de cara enviada para el usuario {user_id}.")
+                return True
+            else:
+                logger.error(f"Error al enviar solicitud de inscripcion de cara: {result.status_code} - {result.text}")
+                return False
         except requests.exceptions.RequestException as e:
             logger.error(f"Error al enviar solicitud de inscripcion de cara: {e}")
             return False
