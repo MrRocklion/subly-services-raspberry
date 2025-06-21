@@ -49,7 +49,7 @@
   <p>Aquí se mostrarán los usuarios registrados en el sistema.</p>
   <a href="/">⬅ Volver al inicio</a>
 
-  <input type="text" id="searchInput" placeholder="Buscar por nombre o apellido...">
+  <input type="text" id="searchInput" placeholder="Buscar por nombre o apellido..." autocomplete="off">
 
   {% if usuarios %}
   <table id="userTable">
@@ -60,6 +60,7 @@
         <th>Apellido</th>
         <th>Inicio</th>
         <th>Fin</th>
+        <th>Foto Subida?</th>
       </tr>
     </thead>
     <tbody>
@@ -70,6 +71,7 @@
         <td>{{ u.lastname }}</td>
         <td>{{ u.start_date }}</td>
         <td>{{ u.end_date }}</td>
+        <td>{{ u.face_loaded }}</td>
       </tr>
       {% endfor %}
     </tbody>

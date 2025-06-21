@@ -49,6 +49,7 @@ class HikVision():
                     auth=HTTPDigestAuth(self.user, self.password),
                     verify=False
                 )
+            response_json = result.json()
             if result.status_code == 200:
                 logger.info(f"Exito Solicitud de inscripcion de cara enviada para el usuario {user_id}.")
                 return True
