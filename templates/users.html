@@ -33,6 +33,15 @@
     a:hover {
       text-decoration: underline;
     }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 20px;
+      border: none;
+      border-radius: 5px;
+      background-color: #2d2d45;
+      color: #fff;
+    }
   </style>
 </head>
 <body>
@@ -40,8 +49,10 @@
   <p>Aquí se mostrarán los usuarios registrados en el sistema.</p>
   <a href="/">⬅ Volver al inicio</a>
 
+  <input type="text" id="searchInput" placeholder="Buscar por nombre o apellido...">
+
   {% if usuarios %}
-  <table>
+  <table id="userTable">
     <thead>
       <tr>
         <th>ID</th>
@@ -66,5 +77,19 @@
   {% else %}
     <p>No hay usuarios registrados aún.</p>
   {% endif %}
+
+  <script>
+    const searchInput = document.getElementById("searchInput");
+    const tableRows = document.querySelectorAll("#userTable tbody tr");
+
+    searchInput.addEventListener("input", function () {
+      const filter = searchInput.value.toLowerCase();
+      tableRows.forEach(row => {
+        const name = row.cells[1].textContent.toLowerCase();
+        const lastname = row.cells[2].textContent.toLowerCase();
+        row.style.display = name.includes(filter) || lastname.includes(filter) ? "" : "none";
+      });
+    });
+  </script>
 </body>
 </html>

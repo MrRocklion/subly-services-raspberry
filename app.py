@@ -189,7 +189,9 @@ def upload():
                 result = isapi.enroll_face(user_id)
                 if result is False:
                     error = "Error al inscribir la cara del usuario. Por favor, inténtelo de nuevo."
-                    error_image_url = url_for('static', filename='upload_failed.jpg')  # ← Tu imagen de error
+                    error_image_url = url_for('static', filename='upload_failed.jpg')
+                else:
+                    db.update_face_load_state(user_id, True)
             except Exception as e:
                 error = f"Ocurrió un error procesando la imagen: {str(e)}"
                 error_image_url = url_for('static', filename='upload_failed.jpg')
