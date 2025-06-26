@@ -11,7 +11,8 @@ from flask import Flask, render_template, request, redirect, url_for, send_from_
 import os
 import uuid
 from werkzeug.utils import secure_filename
-
+import logging
+from classes.Filters import ExcludePathsFilter
 
 DATASET_FOLDER = 'dataset'
 
@@ -34,6 +35,10 @@ subly = SublyBackend(tenant, api_url, username, password)
 isapi = HikVision(isapi_url, isapi_username, isapi_password)
 db = SqliteManager()
 
+EXCLUDED_PATHS = ["/progress", "/search-users"]
+
+werkzeug_logger = logging.getLogger('werkzeug')
+werkzeug_logger.addFilter(ExcludePathsFilter(EXCLUDED_PATHS))
 def update_db_now():
     global progress_value
     try:
@@ -47,9 +52,9 @@ def update_db_now():
             progress_value_aux = int((counter / total) *30 )
             progress_value = 70 + progress_value_aux
             try:
-                if db.get_subscription_by_user_id(user['user_id']):
+                if db.get_subscription_by_dni(user['dni']):
                     db.update_subscription_dates(
-                        user['user_id'],
+                        user['dni'],
                         user['start_date'],
                         user['end_date']
                     )
@@ -57,14 +62,14 @@ def update_db_now():
                 else:
                     db.insert_subscription(user)
                     if isapi.enroll_user(user):
-                        logger.info(f"Usuario {user['user_id']} inscrito correctamente en HikVision.")
-                        db.update_data_load_state(user['user_id'], True)
+                        logger.info(f"Usuario {user['dni']} inscrito correctamente en HikVision.")
+                        db.update_data_load_state(user['dni'], True)
                     else:
-                        logger.error(f"Error al inscribir usuario {user['user_id']} en HikVision.")
-                        db.update_data_load_state(user['user_id'], False)
+                        logger.error(f"Error al inscribir usuario {user['dni']} en HikVision.")
+                        db.update_data_load_state(user['dni'], False)
                     
             except Exception as e:
-                logger.error(f"Error al procesar usuario {user['user_id']}: {e}")
+                logger.error(f"Error al procesar usuario {user['dni']}: {e}")
                 continue
         logger.info(f"Total de usuarios obtenidos de Subly: {len(users)}")
     except Exception as e:
@@ -96,9 +101,9 @@ def update_local_database():
                 time.sleep(60)
         for user in users:
             try:
-                if db.get_subscription_by_user_id(user['user_id']):
+                if db.get_subscription_by_dni(user['dni']):
                     db.update_subscription_dates(
-                        user['user_id'],
+                        user['dni'],
                         user['start_date'],
                         user['end_date']
                     )
@@ -106,11 +111,11 @@ def update_local_database():
                 else:
                     db.insert_subscription(user)
                     if isapi.enroll_user(user):
-                        logger.info(f"Usuario {user['user_id']} inscrito correctamente en HikVision.")
-                        db.update_data_load_state(user['user_id'], True)
+                        logger.info(f"Usuario {user['dni']} inscrito correctamente en HikVision.")
+                        db.update_data_load_state(user['dni'], True)
                     else:
-                        logger.error(f"Error al inscribir usuario {user['user_id']} en HikVision.")
-                        db.update_data_load_state(user['user_id'], False)
+                        logger.error(f"Error al inscribir usuario {user['dni']} en HikVision.")
+                        db.update_data_load_state(user['dni'], False)
                     
             except Exception as e:
                 logger.error(f"Error al procesar usuario {user['user_id']}: {e}")
@@ -129,9 +134,9 @@ def handle_new_subscription(data):
     logger.info('Nueva suscripción recibida: %s', data)
     try:
         if data['tenant'] == tenant:
-            if db.get_subscription_by_user_id(data['user_id']):
+            if db.get_subscription_by_dni(data['dni']):
                 db.update_subscription_dates(
-                    data['user_id'],
+                    data['dni'],
                     data['start_date'],
                     data['end_date']
                 )
@@ -139,11 +144,11 @@ def handle_new_subscription(data):
             else:
                 db.insert_subscription(data)
                 if isapi.enroll_user(data):
-                    logger.info(f"Usuario {data['user_id']} inscrito correctamente en HikVision.")
-                    db.update_data_load_state(data['user_id'], True)
+                    logger.info(f"Usuario {data['dni']} inscrito correctamente en HikVision.")
+                    db.update_data_load_state(data['dni'], True)
                 else:
-                    logger.error(f"Error al inscribir usuario {data['user_id']} en HikVision.")
-                    db.update_data_load_state(data['user_id'], False)
+                    logger.error(f"Error al inscribir usuario {data['dni']} en HikVision.")
+                    db.update_data_load_state(data['dni'], False)
     except Exception as e:
         logger.error('Error al procesar la nueva suscripción: %s', e)
         return
@@ -173,11 +178,11 @@ def upload():
 
     if request.method == 'POST':
         image = request.files.get('image')
-        user_id = request.form.get('user')
+        dni = request.form.get('user')
 
-        if image and user_id:
-            logger.info(f"id detectado: {user_id}")
-            new_filename = f"{secure_filename(user_id)}.jpg"
+        if image and dni:
+            logger.info(f"id detectado: {dni}")
+            new_filename = f"{secure_filename(dni)}.jpg"
             filepath = os.path.join(app.config['DATASET_FOLDER'], new_filename)
             from PIL import Image
             try:
@@ -186,12 +191,12 @@ def upload():
                 rgb_img.save(filepath, format='JPEG')
                 image_url = url_for('get_image', filename=new_filename)
 
-                result = isapi.enroll_face(user_id)
+                result = isapi.enroll_face(dni)
                 if result is False:
                     error = "Error al inscribir la cara del usuario. Por favor, inténtelo de nuevo."
                     error_image_url = url_for('static', filename='upload_failed.jpg')
                 else:
-                    db.update_face_load_state(user_id, True)
+                    db.update_face_load_state(dni, True)
             except Exception as e:
                 error = f"Ocurrió un error procesando la imagen: {str(e)}"
                 error_image_url = url_for('static', filename='upload_failed.jpg')

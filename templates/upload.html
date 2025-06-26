@@ -253,7 +253,7 @@
                     li.textContent = `${user.name} ${user.lastname}`;
                     li.addEventListener('click', () => {
                         searchInput.value = `${user.name} ${user.lastname}`;
-                        userIdInput.value = user.user_id;  // ajustar según campo real
+                        userIdInput.value = user.dni;  // ajustar según campo real
                         suggestions.innerHTML = '';
                     });
                     suggestions.appendChild(li);

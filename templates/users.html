@@ -55,18 +55,20 @@
   <table id="userTable">
     <thead>
       <tr>
-        <th>ID</th>
+        <th>Id</th>
+        <th>Dni</th>
         <th>Nombre</th>
         <th>Apellido</th>
         <th>Inicio</th>
         <th>Fin</th>
-        <th>Foto Subida?</th>
+        <th>Foto</th>
       </tr>
     </thead>
     <tbody>
       {% for u in usuarios %}
       <tr>
         <td>{{ u.user_id }}</td>
+        <td>{{ u.dni }}</td>
         <td>{{ u.name }}</td>
         <td>{{ u.lastname }}</td>
         <td>{{ u.start_date }}</td>

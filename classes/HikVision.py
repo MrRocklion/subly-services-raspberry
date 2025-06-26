@@ -86,7 +86,7 @@ class HikVision():
         end_date = datetime.strptime(user['end_date'], "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc)
         user_data = {
                 "UserInfo": {
-                    "employeeNo": str(user['user_id']),
+                    "employeeNo": str(user['dni']),
                     "name": name,
                     "userType": "normal",
                     "Valid": {

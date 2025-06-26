@@ -1,5 +1,9 @@
 import sqlite3
 
+SUBSCRIPTION_COLUMNS = [
+    "id", "start_date", "end_date", "name", "lastname", "duration",
+    "entries", "user_id", "dni", "image_url", "data_loaded", "face_loaded"
+]
 
 class SqliteManager:
     def __init__(self):
@@ -17,6 +21,7 @@ class SqliteManager:
                 duration INTEGER,
                 entries INTEGER,
                 user_id INTEGER,
+                dni TEXT,
                 image_url TEXT,
                 data_loaded BOOLEAN DEFAULT false,
                 face_loaded BOOLEAN DEFAULT false
@@ -26,6 +31,7 @@ class SqliteManager:
             CREATE TABLE IF NOT EXISTS staff_members (
                 id INTEGER PRIMARY KEY,
                 admin_id INTEGER,
+                dni TEXT,
                 name TEXT,
                 lastname TEXT,
                 email TEXT,
@@ -54,9 +60,9 @@ class SqliteManager:
                 cursor.execute('''
                     INSERT INTO subscriptions (
                         start_date, end_date, name, lastname,
-                        duration, entries, user_id, image_url,
+                        duration, entries, user_id, dni, image_url,
                         data_loaded, face_loaded
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (
                     params['start_date'],
                     params['end_date'],
@@ -65,6 +71,7 @@ class SqliteManager:
                     params['duration'],
                     int(params['entries']),
                     params['user_id'],
+                    params['dni'],
                     params['image_url'],
                     params.get('data_loaded', False),
                     params.get('face_loaded', False)
@@ -81,11 +88,12 @@ class SqliteManager:
                 cursor = conn.cursor()
                 cursor.execute('''
                     INSERT INTO staff_members (
-                        admin_id, name, lastname, email,
+                        admin_id, dni, name, lastname, email,
                         account_type, image_url, data_loaded, face_loaded
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (
                     params['admin_id'],
+                    params['dni'],
                     params['name'],
                     params['lastname'],
                     params['email'],
@@ -104,17 +112,27 @@ class SqliteManager:
         try:
             with sqlite3.connect('app.db') as conn:
                 cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT id, start_date, end_date, name, lastname, duration,
-                           entries, user_id, image_url, data_loaded, face_loaded
+                cursor.execute(f'''
+                    SELECT {", ".join(SUBSCRIPTION_COLUMNS)}
                     FROM subscriptions WHERE user_id = ?
                 ''', (user_id,))
                 row = cursor.fetchone()
-                if row:
-                    keys = ["id", "start_date", "end_date", "name", "lastname", "duration",
-                            "entries", "user_id", "image_url", "data_loaded", "face_loaded"]
-                    return dict(zip(keys, row))
-                return None
+                return dict(zip(SUBSCRIPTION_COLUMNS, row)) if row else None
+        except sqlite3.Error as e:
+            print("Error al buscar la suscripción:", e)
+            return False
+
+    def get_subscription_by_dni(self, dni):
+        """Busca en subscriptions la fila que coincida con el dni proporcionado."""
+        try:
+            with sqlite3.connect('app.db') as conn:
+                cursor = conn.cursor()
+                cursor.execute(f'''
+                    SELECT {", ".join(SUBSCRIPTION_COLUMNS)}
+                    FROM subscriptions WHERE dni = ?
+                ''', (dni,))
+                row = cursor.fetchone()
+                return dict(zip(SUBSCRIPTION_COLUMNS, row)) if row else None
         except sqlite3.Error as e:
             print("Error al buscar la suscripción:", e)
             return False
@@ -132,37 +150,37 @@ class SqliteManager:
             print("Error al buscar el administrador:", e)
             return False
 
-    def update_subscription_dates(self, subscription_id, new_start_date, new_end_date):
-        """Actualiza start_date y end_date en la suscripción con el ID proporcionado."""
+    def update_subscription_dates(self, dni, new_start_date, new_end_date):
+        """Actualiza start_date y end_date en la suscripción con el user_id proporcionado."""
         try:
             with sqlite3.connect('app.db') as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
                     UPDATE subscriptions 
                     SET start_date = ?, end_date = ? 
-                    WHERE user_id = ?
-                ''', (new_start_date, new_end_date, subscription_id))
+                    WHERE dni = ?
+                ''', (new_start_date, new_end_date, dni))
                 if cursor.rowcount > 0:
                     conn.commit()
-                    print(f"Suscripción {subscription_id} actualizada correctamente.")
+                    print(f"Suscripción de usuario {dni} actualizada correctamente.")
                     return True
                 else:
-                    print(f"No se encontró la suscripción con ID {subscription_id}.")
+                    print(f"No se encontró la suscripción con dni {dni}.")
                     return False
         except sqlite3.Error as e:
             print("Error al actualizar la suscripción:", e)
             return False
 
-    def update_data_load_state(self,subscription_id,data_loaded):
-        """Actualiza el estado de data_loaded en la suscripción con el ID proporcionado."""
+    def update_data_load_state(self, dni, data_loaded):
+        """Actualiza el estado de data_loaded en la suscripción con el user_id proporcionado."""
         try:
             with sqlite3.connect('app.db') as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
                     UPDATE subscriptions 
                     SET data_loaded = ? 
-                    WHERE user_id = ?
-                ''', (data_loaded, subscription_id))
+                    WHERE dni = ?
+                ''', (data_loaded, dni))
                 if cursor.rowcount > 0:
                     conn.commit()
                     return True
@@ -170,16 +188,17 @@ class SqliteManager:
                     return False
         except sqlite3.Error as e:
             return False
-    def update_face_load_state(self,subscription_id,face_loaded):
-        """Actualiza el estado de face_loaded en la suscripción con el ID proporcionado."""
+
+    def update_face_load_state(self, dni, face_loaded):
+        """Actualiza el estado de face_loaded en la suscripción con el user_id proporcionado."""
         try:
             with sqlite3.connect('app.db') as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
                     UPDATE subscriptions 
                     SET face_loaded = ? 
-                    WHERE user_id = ?
-                ''', (face_loaded, subscription_id))
+                    WHERE dni = ?
+                ''', (face_loaded, dni))
                 if cursor.rowcount > 0:
                     conn.commit()
                     return True
@@ -187,18 +206,15 @@ class SqliteManager:
                     return False
         except sqlite3.Error as e:
             return False
+
     def get_all_subscriptions(self):
         """Obtiene todas las suscripciones de la base de datos."""
         try:
             with sqlite3.connect('app.db') as conn:
                 cursor = conn.cursor()
-                cursor.execute('SELECT * FROM subscriptions')
+                cursor.execute(f'SELECT {", ".join(SUBSCRIPTION_COLUMNS)} FROM subscriptions')
                 rows = cursor.fetchall()
-                if rows:
-                    keys = ["id", "start_date", "end_date", "name", "lastname", "duration",
-                            "entries", "user_id", "image_url", "data_loaded", "face_loaded"]
-                    return [dict(zip(keys, row)) for row in rows]
-                return []
+                return [dict(zip(SUBSCRIPTION_COLUMNS, row)) for row in rows] if rows else []
         except sqlite3.Error as e:
             print("Error al obtener las suscripciones:", e)
             return []
