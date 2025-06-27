@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 import socketio
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory,jsonify
 import os
-import uuid
+from classes.gpiosManager import GpiosManager
 from werkzeug.utils import secure_filename
 import logging
 from classes.Filters import ExcludePathsFilter
@@ -35,10 +35,11 @@ subly = SublyBackend(tenant, api_url, username, password)
 isapi = HikVision(isapi_url, isapi_username, isapi_password)
 db = SqliteManager()
 
-EXCLUDED_PATHS = ["/progress", "/search-users"]
+EXCLUDED_PATHS = ["/progress","/search-users"]
 
 werkzeug_logger = logging.getLogger('werkzeug')
 werkzeug_logger.addFilter(ExcludePathsFilter(EXCLUDED_PATHS))
+manager = GpiosManager()
 def update_db_now():
     global progress_value
     try:
@@ -80,7 +81,6 @@ def update_db_now():
 
 def update_local_database():
     '''Este hilo se encarga de actualizar la db con los usuarios activos de Subly todos los días a las 9PM'''
-
     while True:
         now = datetime.now()
         next_run = now.replace(hour=4, minute=30, second=30, microsecond=0)
@@ -211,6 +211,21 @@ def upload():
 def get_image(filename):
     return send_from_directory(app.config['DATASET_FOLDER'], filename)
 
+
+@app.route('/normal', methods=['POST'])
+def normal_pass():
+    resultado = "Pase normal generado exitosamente "
+    logger.info(resultado)
+    GpiosManager.turnstileOpen()
+    return jsonify({'mensaje': resultado})
+
+
+@app.route('/special', methods=['POST'])
+def special_pass():
+    resultado = "Pase especial generado exitosamente "
+    logger.info(resultado)
+    GpiosManager.armDown()
+    return jsonify({'mensaje': resultado})
 
 @app.route('/search-users')
 def search_users():

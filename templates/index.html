@@ -33,39 +33,119 @@
 
     .button-container {
       display: flex;
+      flex-direction: column;
       gap: 20px;
       flex-wrap: wrap;
       justify-content: center;
+      align-items: center;
     }
 
     .btn {
-      background-color: #2d2d45;
-      color: #f4f4f4;
+      color: #ffffff;
       padding: 12px 24px;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       font-size: 1rem;
+      font-weight: bold;
       text-decoration: none;
       display: inline-block;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
       transition: background-color 0.3s ease, transform 0.2s ease;
+      min-width: 200px;
+      text-align: center;
     }
 
     .btn:hover {
-      background-color: #3a3a5c;
       transform: scale(1.05);
+    }
+
+    .btn-upload {
+      background-color: #4caf50;
+    }
+
+    .btn-upload:hover {
+      background-color: #45a049;
+    }
+
+    .btn-users {
+      background-color: #2196f3;
+    }
+
+    .btn-users:hover {
+      background-color: #1976d2;
+    }
+
+    .btn-update {
+      background-color: #ff9800;
+    }
+
+    .btn-update:hover {
+      background-color: #fb8c00;
+    }
+
+    .btn-generate {
+      background-color: #9c27b0;
+    }
+
+    .btn-generate:hover {
+      background-color: #7b1fa2;
+    }
+
+    #mensaje {
+      margin-top: 25px;
+      font-size: 1.1rem;
+      color: #00ffcc;
+      background-color: #2a2a3d;
+      padding: 10px 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
     }
   </style>
 </head>
+
 <body>
   <h1>🛰️ Subly Client Hikvision v3</h1>
   <p>App para gestionar equipos HIKVISION</p>
 
   <div class="button-container">
-    <a href="/upload" class="btn">Cargar Imagen</a>
-    <a href="/users" class="btn">Ver Usuarios</a>
-    <a href="/update" class="btn">Actualizar Base de Datos</a>
-
-  </form>
+    <a href="/upload" class="btn btn-upload">📤 Cargar Imagen</a>
+    <a href="/users" class="btn btn-users">👥 Ver Usuarios</a>
+    <a href="/update" class="btn btn-update">🔄 Actualizar Base de Datos</a>
+    <button onclick="generarPase()" class="btn btn-generate">🎫 Generar Pase</button>
+    <button onclick="specialPass()" class="btn btn-generate">🎫 Generar Especial</button>
   </div>
+
+
+
+  <script>
+    function generarPase() {
+      fetch('/normal', {
+        method: 'POST'
+      })
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById("mensaje").innerText = data.mensaje;
+      })
+      .catch(error => {
+        document.getElementById("mensaje").innerText = "Error al generar el pase.";
+        console.error("Error:", error);
+      });
+    }
+
+        function specialPass() {
+      fetch('/special', {
+        method: 'POST'
+      })
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById("mensaje").innerText = data.mensaje;
+      })
+      .catch(error => {
+        document.getElementById("mensaje").innerText = "Error al generar el pase.";
+        console.error("Error:", error);
+      });
+    }
+  </script>
 </body>
 </html>
