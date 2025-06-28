@@ -27,9 +27,9 @@ username = os.getenv("USERNAME")
 password = os.getenv("PASSWORD")
 
 # Datos de ISAPI
-isapi_url = os.getenv("ISAPI_URL", api_url)
-isapi_username = os.getenv("ISAPI_USERNAME", username)
-isapi_password = os.getenv("ISAPI_PASSWORD", password)
+isapi_url = os.getenv("ISAPI_URL")
+isapi_username = os.getenv("ISAPI_USERNAME")
+isapi_password = os.getenv("ISAPI_PASSWORD")
 
 subly = SublyBackend(tenant, api_url, username, password)
 isapi = HikVision(isapi_url, isapi_username, isapi_password)

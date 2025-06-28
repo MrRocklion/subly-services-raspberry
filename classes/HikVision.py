@@ -49,12 +49,12 @@ class HikVision():
                     auth=HTTPDigestAuth(self.user, self.password),
                     verify=False
                 )
-            response_json = result.json()
-            if result.status_code == 200:
+            response_json = result.json()     
+            if response_json['statusCode'] == 1:
                 logger.info(f"Exito Solicitud de inscripcion de cara enviada para el usuario {user_id}.")
                 return True
             else:
-                logger.error(f"Error al enviar solicitud de inscripcion de cara: {result.status_code} - {result.text}")
+                logger.error(f"Error al enviar solicitud de inscripcion de cara: - {response_json}")
                 return False
         except requests.exceptions.RequestException as e:
             logger.error(f"Error al enviar solicitud de inscripcion de cara: {e}")
@@ -79,6 +79,30 @@ class HikVision():
         except requests.exceptions.RequestException as e:
             logger.error(f"Error al enviar solicitud de inscripcion: {e}")
             return False
+        
+    def get_image_device(self, dni):
+        url_enroll = f"{self.api_url}/ISAPI/Intelligent/FDLib/FDSearch?format=json"
+        try:
+            response_faceid = requests.post(
+                url_enroll,
+                headers={},
+                data=json.dumps({
+                    "searchResultPosition": 0,
+                    "maxResults": 1,
+                    "faceLibType": "blackFD",
+                    "FDID": "1",
+                    "FPID": f"{dni}"
+                }),
+                auth=HTTPDigestAuth(self.user, self.password),
+                verify=False
+            )
+            data = response_faceid.json()
+            print("Parsed JSON:", json.dumps(data, indent=2))
+            return True
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error al verificar imagen {e}")
+            return False
+
     
     def format_user_data(self, user):
         name = user['name']+' '+user['lastname']
