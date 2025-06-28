@@ -1,10 +1,10 @@
 import os
 from gpiozero import Device
 from gpiozero import DigitalOutputDevice
-from gpiozero.pins.pigpio import PiGPIOFactory
+from gpiozero.pins.rpigpio import RPiGPIOFactory
 import time
 
-Device.pin_factory = PiGPIOFactory()
+Device.pin_factory = RPiGPIOFactory()
 class GpiosManager():
     def __init__(self):
         super().__init__()
