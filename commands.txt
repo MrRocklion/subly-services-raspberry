@@ -1,0 +1,14 @@
+scp ./dataset -r root@192.168.1.62:/root/Desktop/api_conteo/video
+
+[Unit]
+Description=Aplicacion para controlar los torniquetes hikvision
+After=network.target
+
+[Service]
+User=admin
+WorkingDirectory=/home/admin/subly-services-raspberry/
+ExecStart=/home/admin/env/bin/python3 /home/admin/subly-services-raspberry/env.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
