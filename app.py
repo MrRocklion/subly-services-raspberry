@@ -216,7 +216,7 @@ def get_image(filename):
 def normal_pass():
     resultado = "Pase normal generado exitosamente "
     logger.info(resultado)
-    GpiosManager.turnstileOpen()
+    manager.turnstileOpen()
     return jsonify({'mensaje': resultado})
 
 
@@ -224,7 +224,7 @@ def normal_pass():
 def special_pass():
     resultado = "Pase especial generado exitosamente "
     logger.info(resultado)
-    GpiosManager.armDown()
+    manager.armDown()
     return jsonify({'mensaje': resultado})
 
 @app.route('/search-users')
