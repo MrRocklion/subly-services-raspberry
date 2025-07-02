@@ -13,7 +13,7 @@ from classes.gpiosManager import GpiosManager
 from werkzeug.utils import secure_filename
 import logging
 from classes.Filters import ExcludePathsFilter
-
+from dateutil import parser
 DATASET_FOLDER = 'dataset'
 
 app = Flask(__name__)
@@ -44,14 +44,34 @@ def update_db_now():
     global progress_value
     try:
         progress_value=10
-        users = subly.get_users()
-        progress_value=60
+        users_subly = subly.get_users()
+        users = []
+        for user in users_subly:
+            dni = user.get('dni', '')
+            if not dni or not dni.strip():
+                logger.warning(f"Usuario {user.get('user_id')} no tiene DNI, se omitirá.")
+                continue
+            user['dni'] = user['dni'].strip()
+            users.append(user)
+        admins_subly = subly.get_admins()
+        admins = []
+        progress_value=40
+        for admin in admins_subly:
+            dni = admin.get('dni', '')
+            if not dni or not dni.strip():
+                logger.warning(f"Administrador {admin['user_id']} no tiene DNI, se omitirá.")
+                continue
+            admin['dni'] = admin['dni'].strip()
+            admin['start_date'] = "2025-07-19T00:00:00.000Z"
+            admin['end_date'] = "2035-07-19T00:00:00.000Z"
+            admins.append(admin)
+        progress_value=50
         counter = 0
         for user in users:
             total = len(users)
             counter += 1
-            progress_value_aux = int((counter / total) *30 )
-            progress_value = 70 + progress_value_aux
+            progress_value_aux = int((counter / total) *20 )
+            progress_value = 60 + progress_value_aux
             try:
                 if db.get_subscription_by_dni(user['dni']):
                     db.update_subscription_dates(
@@ -72,6 +92,32 @@ def update_db_now():
             except Exception as e:
                 logger.error(f"Error al procesar usuario {user['dni']}: {e}")
                 continue
+        counter = 0
+        for admin in admins:
+            total = len(admins)
+            counter += 1
+            progress_value_aux = int((counter / total) *20 )
+            progress_value = 80 + progress_value_aux
+            try:
+                if db.get_admin_by_dni(admin['dni']):
+                    db.update_admin_dates(
+                        admin['dni'],
+                        admin['start_date'],
+                        admin['end_date']
+                    )
+                    isapi.update_days(admin)
+                else:
+                    db.insert_admin(admin)
+                    if isapi.enroll_user(admin):
+                        logger.info(f"Administrador {admin['dni']} inscrito correctamente en HikVision.")
+                        db.update_data_load_state(admin['dni'], True)
+                    else:
+                        logger.error(f"Error al inscribir administrador {admin['dni']} en HikVision.")
+                        db.update_data_load_state(admin['dni'], False)
+            except Exception as e:
+                logger.error(f"Error al procesar administrador {admin['dni']}: {e}")
+                continue
+
         logger.info(f"Total de usuarios obtenidos de Subly: {len(users)}")
     except Exception as e:
         logger.error(f"Error al iniciar la actualización de la base de datos: {e}")
@@ -99,6 +145,8 @@ def update_local_database():
             except Exception as e:
                 logger.error(f"Error al obtener usuarios: {e}. Reintentando en 60 segundos...")
                 time.sleep(60)
+        for user in users:
+            user['dni'] = user['dni'].strip()
         for user in users:
             try:
                 if db.get_subscription_by_dni(user['dni']):
@@ -134,9 +182,9 @@ def handle_new_subscription(data):
     logger.info('Nueva suscripción recibida: %s', data)
     try:
         if data['tenant'] == tenant:
-            if db.get_subscription_by_dni(data['dni']):
+            if db.get_subscription_by_dni(data['dni'].strip()):
                 db.update_subscription_dates(
-                    data['dni'],
+                    data['dni'].strip(),
                     data['start_date'],
                     data['end_date']
                 )
@@ -231,6 +279,8 @@ def special_pass():
 def search_users():
     query = request.args.get('q', '').lower()
     users = db.get_all_subscriptions()
+    admins = db.get_all_staff_members()
+    users.extend(admins)
     filtered = [
         u for u in users
         if query in u['name'].lower() or query in u['lastname'].lower()
@@ -242,6 +292,12 @@ def mostrar_usuarios():
     users = db.get_all_subscriptions()
     print(f"Usuarios obtenidos de la base de datos: {len(users)}")
     return render_template('users.html', usuarios=users)
+
+@app.route('/admins')
+def admins_view():
+    admins = db.get_all_staff_members()
+    print(f"Usuarios obtenidos de la base de datos: {len(admins)}")
+    return render_template('admins.html', usuarios=admins)
 
 
 @app.route('/update')

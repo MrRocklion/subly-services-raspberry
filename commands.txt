@@ -1,5 +1,6 @@
-scp ./dataset -r root@192.168.1.62:/root/Desktop/api_conteo/video
+scp ./dataset -r admin@192.168.0.100:/home/amdin/subly-services-raspberry
 
+sudo nano /etc/systemd/system/subly_services_raspberry.service
 [Unit]
 Description=Aplicacion para controlar los torniquetes hikvision
 After=network.target
