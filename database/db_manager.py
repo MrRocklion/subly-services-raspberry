@@ -189,16 +189,16 @@ class SqliteManager:
             print("Error al buscar el administrador:", e)
             return False
 
-    def update_subscription_dates(self, dni, new_start_date, new_end_date):
+    def update_subscription_dates(self, dni, new_end_date):
         """Actualiza start_date y end_date en la suscripción con el user_id proporcionado."""
         try:
             with sqlite3.connect('app.db') as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
                     UPDATE subscriptions 
-                    SET start_date = ?, end_date = ? 
+                    SET  end_date = ? 
                     WHERE dni = ?
-                ''', (new_start_date, new_end_date, dni))
+                ''', (new_end_date, dni))
                 if cursor.rowcount > 0:
                     conn.commit()
                     print(f"Suscripción de usuario {dni} actualizada correctamente.")

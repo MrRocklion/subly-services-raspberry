@@ -13,7 +13,7 @@ from classes.gpiosManager import GpiosManager
 from werkzeug.utils import secure_filename
 import logging
 from classes.Filters import ExcludePathsFilter
-from dateutil import parser
+
 DATASET_FOLDER = 'dataset'
 
 app = Flask(__name__)
@@ -40,6 +40,7 @@ EXCLUDED_PATHS = ["/progress","/search-users"]
 werkzeug_logger = logging.getLogger('werkzeug')
 werkzeug_logger.addFilter(ExcludePathsFilter(EXCLUDED_PATHS))
 manager = GpiosManager()
+
 def update_db_now():
     global progress_value
     try:
@@ -75,11 +76,11 @@ def update_db_now():
             try:
                 if db.get_subscription_by_dni(user['dni']):
                     db.update_subscription_dates(
-                        user['dni'],
-                        user['start_date'],
+                        user['dni'].strip(),
                         user['end_date']
                     )
-                    isapi.update_days(user)
+                    user_updated = db.get_subscription_by_dni(user['dni'].strip())
+                    isapi.update_days(user_updated)
                 else:
                     db.insert_subscription(user)
                     if isapi.enroll_user(user):
@@ -132,43 +133,10 @@ def update_local_database():
         next_run = now.replace(hour=4, minute=30, second=30, microsecond=0)
         if now >= next_run:
             next_run += timedelta(days=1)
-
         seconds_until_run = (next_run - now).total_seconds()
         time.sleep(seconds_until_run)
-        users = []
-        while not users:
-            try:
-                users = subly.get_users()
-                if not users:
-                    logger.warning("No se encontraron usuarios en Subly. Reintentando en 60 segundos...")
-                    time.sleep(60)
-            except Exception as e:
-                logger.error(f"Error al obtener usuarios: {e}. Reintentando en 60 segundos...")
-                time.sleep(60)
-        for user in users:
-            user['dni'] = user['dni'].strip()
-        for user in users:
-            try:
-                if db.get_subscription_by_dni(user['dni']):
-                    db.update_subscription_dates(
-                        user['dni'],
-                        user['start_date'],
-                        user['end_date']
-                    )
-                    isapi.update_days(user)
-                else:
-                    db.insert_subscription(user)
-                    if isapi.enroll_user(user):
-                        logger.info(f"Usuario {user['dni']} inscrito correctamente en HikVision.")
-                        db.update_data_load_state(user['dni'], True)
-                    else:
-                        logger.error(f"Error al inscribir usuario {user['dni']} en HikVision.")
-                        db.update_data_load_state(user['dni'], False)
-                    
-            except Exception as e:
-                logger.error(f"Error al procesar usuario {user['user_id']}: {e}")
-                continue
-        logger.info(f"Total de usuarios obtenidos de Subly: {len(users)}")
+        update_db_now()
+        
 
 
 
@@ -185,10 +153,12 @@ def handle_new_subscription(data):
             if db.get_subscription_by_dni(data['dni'].strip()):
                 db.update_subscription_dates(
                     data['dni'].strip(),
-                    data['start_date'],
                     data['end_date']
                 )
-                isapi.update_days(data)
+                #primero lo actualizamos en la base de datos y luego lo traemos con las fechas modificadas para
+                #actualizar los dias de acceso en HikVision
+                user_updated = db.get_subscription_by_dni(data['dni'].strip())
+                isapi.update_days(user_updated)
             else:
                 db.insert_subscription(data)
                 if isapi.enroll_user(data):
