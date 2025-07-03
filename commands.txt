@@ -1,4 +1,4 @@
-scp ./dataset -r admin@192.168.0.100:/home/amdin/subly-services-raspberry
+scp -r ./dataset  admin@192.168.0.100:/home/admin/subly-services-raspberry
 
 sudo nano /etc/systemd/system/subly_services_raspberry.service
 [Unit]
