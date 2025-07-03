@@ -303,7 +303,7 @@ class SqliteManager:
             return False
 
     def get_all_subscriptions(self):
-        """Obtiene todas las suscripciones activas en base al rango de fechas."""
+        """Obtiene todas las suscripciones cuya fecha de finalización es mayor a hoy."""
         try:
             today = datetime.now().date()
             with sqlite3.connect('app.db') as conn:
@@ -311,14 +311,15 @@ class SqliteManager:
                 query = f'''
                     SELECT {", ".join(SUBSCRIPTION_COLUMNS)}
                     FROM subscriptions
-                    WHERE DATE(?) >= DATE(start_date) AND DATE(?) < DATE(end_date)
+                    WHERE DATE(end_date) > DATE(?)
                 '''
-                cursor.execute(query, (today, today))
+                cursor.execute(query, (today,))
                 rows = cursor.fetchall()
                 return [dict(zip(SUBSCRIPTION_COLUMNS, row)) for row in rows] if rows else []
         except sqlite3.Error as e:
             print("Error al obtener las suscripciones:", e)
             return []
+
     def get_all_staff_members(self):
         """Obtiene todos los administradores"""
         try:
@@ -328,7 +329,7 @@ class SqliteManager:
                     SELECT {", ".join(SUBSCRIPTION_COLUMNS)}
                     FROM staff_members
                 '''
-                cursor.execute(query)  # ✅ Sin parámetros
+                cursor.execute(query)
                 rows = cursor.fetchall()
                 return [dict(zip(SUBSCRIPTION_COLUMNS, row)) for row in rows] if rows else []
         except sqlite3.Error as e:
