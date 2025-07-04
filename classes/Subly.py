@@ -75,3 +75,24 @@ class SublyBackend:
         except Exception as e:
             logger.error(f"Error al obtener usuarios: {e}")
         return []
+    
+    def get_user_info(self,user_id):
+        url = f"{self.api_url}/api/users/{user_id}"
+        headers = {
+            'x-tenant-id': self.tenant,
+            'Authorization': f'Bearer {self.jwt}',
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+        try:
+            response = requests.get(url, headers=headers)
+            if response.status_code == 200:
+                return response.json().get('result', {})
+            elif response.status_code == 401:
+                logger.error("Token de autenticación no válido o expirado.")
+                self.jwt = self.get_jwt()
+            else:
+                logger.warning(f"Error en la solicitud: {response.status_code}")
+        except Exception as e:
+            logger.error(f"Error al obtener usuarios: {e}")
+        return []
