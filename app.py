@@ -76,9 +76,6 @@ def update_db_now():
             try:
                 user_db = db.get_subscription_by_dni(user['dni'])
                 if user_db:
-                    if user['end_date'] < user_db['end_date']:
-                        logger.info(f"Usuario {user['dni']} ya está actualizado con una fecha de finalización más reciente.")
-                        continue
                     db.update_subscription_dates(
                         user['dni'].strip(),
                         user['end_date']
