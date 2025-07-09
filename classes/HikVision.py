@@ -103,6 +103,33 @@ class HikVision():
             logger.error(f"Error al verificar imagen {e}")
             return False
 
+    def veirfy_user(self, dni):
+        url_enroll = f"{self.api_url}/ISAPI/AccessControl/UserInfo/Search?format=json"
+        try:
+            response_faceid = requests.post(
+                url_enroll,
+                headers={},
+                data=json.dumps({
+                "UserInfoSearchCond":{
+                    "searchID":f"{dni}",
+                    "maxResults":10,
+                    "searchResultPosition":0,
+                    "fuzzySearch":f"{dni}"
+                    }
+                }),
+                auth=HTTPDigestAuth(self.user, self.password),
+                verify=False
+            )
+            data = response_faceid.json()
+            result = data['UserInfoSearch']['responseStatusStrg']
+            if result == "OK":
+                return True
+            else:
+                return False
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error al verificar usuario {e}")
+            return False
+        
     
     def format_user_data(self, user):
         name = user['name']+' '+user['lastname']

@@ -1,5 +1,5 @@
 import requests
-from logger_config import logger
+from classes.Logger import logger
 from requests.auth import HTTPDigestAuth
 from datetime import datetime, timezone
 import json
@@ -31,6 +31,7 @@ class HikVision():
             logger.error(f"Error al enviar solicitud de inscripcion: {e}")
             return False
         
+        
     def enroll_face(self, user_id):
         url_face_id = f"{self.api_url}/ISAPI/Intelligent/FDLib/FDSetUp?format=json"
         image_name = str(user_id) +".jpg"
@@ -38,19 +39,23 @@ class HikVision():
         src_dir = os.path.abspath(os.path.join(base_dir, ".."))
         data_dir = os.path.join(src_dir, "dataset")
         total_path = os.path.join(data_dir, image_name)
-        print(f"Total path: {total_path}")
         files= [('img',(image_name,open(total_path,'rb'),'image/jpeg'))]
         try:
-            requests.put(
+            result = requests.put(
                     url_face_id,
                     headers={},
                     files=files,
-                    data = self.userData['face_data'],
+                    data = self.format_image_data(user_id),
                     auth=HTTPDigestAuth(self.user, self.password),
                     verify=False
                 )
-            logger.info(f"Exito Solicitud de inscripcion de cara enviada para el usuario {user_id}.")
-            return True
+            response_json = result.json()     
+            if response_json['statusCode'] == 1:
+                logger.info(f"Exito Solicitud de inscripcion de cara enviada para el usuario {user_id}.")
+                return True
+            else:
+                logger.error(f"Error al enviar solicitud de inscripcion de cara: - {response_json}")
+                return False
         except requests.exceptions.RequestException as e:
             logger.error(f"Error al enviar solicitud de inscripcion de cara: {e}")
             return False
@@ -74,6 +79,54 @@ class HikVision():
         except requests.exceptions.RequestException as e:
             logger.error(f"Error al enviar solicitud de inscripcion: {e}")
             return False
+        
+    def get_image_device(self, dni):
+        url_enroll = f"{self.api_url}/ISAPI/Intelligent/FDLib/FDSearch?format=json"
+        try:
+            response_faceid = requests.post(
+                url_enroll,
+                headers={},
+                data=json.dumps({
+                    "searchResultPosition": 0,
+                    "maxResults": 1,
+                    "faceLibType": "blackFD",
+                    "FDID": "1",
+                    "FPID": f"{dni}"
+                }),
+                auth=HTTPDigestAuth(self.user, self.password),
+                verify=False
+            )
+            data = response_faceid.json()
+            print("Parsed JSON:", json.dumps(data, indent=2))
+            return True
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error al verificar imagen {e}")
+            return False
+
+    def veirfy_user(self, dni):
+        url_enroll = f"{self.api_url}/ISAPI/AccessControl/UserInfo/Search?format=json"
+        try:
+            response_faceid = requests.post(
+                url_enroll,
+                headers={},
+                data=json.dumps({
+                "UserInfoSearchCond":{
+                    "searchID":f"{dni}",
+                    "maxResults":10,
+                    "searchResultPosition":0,
+                    "fuzzySearch":f"{dni}"
+                    }
+                }),
+                auth=HTTPDigestAuth(self.user, self.password),
+                verify=False
+            )
+            data = response_faceid.json()
+            print("Parsed JSON:", json.dumps(data, indent=2))
+            return True
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error al verificar imagen {e}")
+            return False
+        
     
     def format_user_data(self, user):
         name = user['name']+' '+user['lastname']
@@ -81,7 +134,7 @@ class HikVision():
         end_date = datetime.strptime(user['end_date'], "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc)
         user_data = {
                 "UserInfo": {
-                    "employeeNo": str(user['user_id']),
+                    "employeeNo": str(user['dni']),
                     "name": name,
                     "userType": "normal",
                     "Valid": {
@@ -104,8 +157,9 @@ class HikVision():
         return user_data
     
     def format_image_data(self, id):
-        image_data = {"face_data": {
+        image_data =  {
                 "FaceDataRecord": f'{{"faceLibType":"blackFD","FDID":"1","FPID":"{id}"}}'
             }
-            }
+            
         return image_data
+
