@@ -79,7 +79,9 @@ def update_db_now():
                 if user_db:
                     db.update_subscription_dates(
                             user['dni'].strip(),
-                            user['end_date']
+                            user['end_date'],
+                            user['name'],
+                            user['lastname']
                         )
                     user_updated = db.get_subscription_by_dni(user['dni'].strip())
                     if isapi.veirfy_user(user['dni'].strip()):
@@ -158,7 +160,9 @@ def handle_new_subscription(data):
             if db.get_subscription_by_dni(data['dni'].strip()):
                 db.update_subscription_dates(
                     data['dni'].strip(),
-                    data['end_date']
+                    data['end_date'],
+                    data['name'],
+                    data['lastname']
                 )
                 #primero lo actualizamos en la base de datos y luego lo traemos con las fechas modificadas para
                 #actualizar los dias de acceso en HikVision
