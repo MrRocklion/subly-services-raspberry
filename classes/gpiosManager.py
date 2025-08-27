@@ -36,20 +36,20 @@ class GpiosManager():
         return "puerta especial abierta"
 
 # class GpiosManager():
-#     def __init__(self):
-#         super().__init__()
-#         self.relay_1 = 1
-#         self.relay_2 = 2
-#         self.relay_3 = 3
-#         self.relay_4 = 4
+    # def __init__(self):
+    #     super().__init__()
+    #     self.relay_1 = 1
+    #     self.relay_2 = 2
+    #     self.relay_3 = 3
+    #     self.relay_4 = 4
    
 
-#     def turnstileOpen(self):
+    # def turnstileOpen(self):
 
-#         return "puerta general abierta"
+    #     return "puerta general abierta"
 
-#     def armDown(self):
-#         return "puerta especial abierta"
+    # def armDown(self):
+    #     return "puerta especial abierta"
 
 
 
