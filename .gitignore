@@ -16,5 +16,6 @@
 *.whl
 *.coverage
 /dataset
+/backup
 *.mypy_cache
 **/__pycache__/

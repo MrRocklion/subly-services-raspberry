@@ -2,6 +2,8 @@ import requests
 from classes.Logger import logger
 from requests.auth import HTTPDigestAuth
 from datetime import datetime, timezone
+from pathlib import Path
+from urllib.parse import urlparse
 import json
 import os
 class HikVision():
@@ -97,10 +99,94 @@ class HikVision():
                 verify=False
             )
             data = response_faceid.json()
+            matches = data.get("MatchList", [])
+            if not matches:
+                print("No se encontraron coincidencias.")
+                return False
             print("Parsed JSON:", json.dumps(data, indent=2))
+            fpid = matches[0].get("FPID")
+            face_url = matches[0].get("faceURL")
+            if not (fpid and face_url):
+                print("Faltan FPID o faceURL en la respuesta.")
+                return False
+
+            out_dir = Path("backup")
+            out_dir.mkdir(parents=True, exist_ok=True)
+
+            path_part = urlparse(face_url).path
+            base_before_at = path_part.split("@", 1)[0]
+            ext = os.path.splitext(base_before_at)[1] or ".jpg"
+            out_path = out_dir / f"{fpid}{ext}"
+
+            # 4) Descargar la imagen con Digest Auth
+            img_resp = requests.get(
+                face_url,
+                auth=HTTPDigestAuth(self.user, self.password),
+                timeout=20,
+                stream=True
+            )
+            img_resp.raise_for_status()
+
+            # 5) Guardar en disco (streaming)
+            with open(out_path, "wb") as f:
+                for chunk in img_resp.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+
+            print(f"Imagen guardada en: {out_path}")
             return True
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error al verificar imagen {e}")
+            logger.error(f"Error al traer imagen {e}")
+            return False
+
+    def get_all_image_device(self):
+        url = f"{self.api_url}/ISAPI/AccessControl/UserInfo/Search?format=json"
+        try:
+            response = requests.post(
+                url,
+                headers={},
+                data=json.dumps({
+                    "UserInfoSearchCond":{
+                        "searchID":"sdgdshw234",
+                        "maxResults":2000,
+                        "searchResultPosition":0
+                        }
+                        }),
+                auth=HTTPDigestAuth(self.user, self.password),
+                verify=False
+            )
+            data = response.json()
+            users = data['UserInfoSearch']['UserInfo']
+            url_images = []
+            url_images = [
+                {'id': str(u.get('employeeNo')), 'img': u['faceURL']}
+                for u in users
+                if u.get('faceURL') and u.get('employeeNo')
+            ]
+            
+            out_dir = Path("backup")
+            out_dir.mkdir(parents=True, exist_ok=True)
+
+            for image in url_images:
+                path_part = urlparse(image['img']).path
+                base_before_at = path_part.split("@", 1)[0]
+                ext = os.path.splitext(base_before_at)[1] or ".jpg"
+                out_path = out_dir / f"{image['id']}{ext}"
+                img_resp = requests.get(
+                    image['img'],
+                    auth=HTTPDigestAuth(self.user, self.password),
+                    timeout=20,
+                    stream=True
+                )
+                img_resp.raise_for_status()
+                with open(out_path, "wb") as f:
+                    for chunk in img_resp.iter_content(chunk_size=8192):
+                        if chunk:
+                            f.write(chunk)
+                print(image)
+            return users
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error al traer imagen {e}")
             return False
 
     def veirfy_user(self, dni):
@@ -165,4 +251,40 @@ class HikVision():
             }
             
         return image_data
+    
+
+    def get_user_events(self,id,start_time,end_time):
+        url = f"{self.api_url}/ISAPI/AccessControl/AcsEvent?format=json"
+        format_start_time = start_time.strftime("%Y-%m-%dT%H:%M:%S%z")
+        format_end_time = end_time.strftime("%Y-%m-%dT%H:%M:%S%z")
+        try:
+            response = requests.post(
+                url,
+                headers={},
+                data=json.dumps(
+                    {"AcsEventCond":
+                        {
+                            "searchID":f"{id}",
+                            "searchResultPosition":0,
+                            "maxResults":200,
+                            "major":0,
+                            "minor":0,
+                            "startTime":format_start_time,
+                            "endTime":format_end_time,
+                            "employeeNoString":f"{id}",
+                            "timeReverseOrder":True
+                        }
+                    }
+                ),
+                auth=HTTPDigestAuth(self.user, self.password),
+                verify=False
+            )
+            if response.status_code == 200:
+                return response.json()
+            else:
+                logger.error(f"Error al obtener eventos del usuario {id}: {response.status_code} - {response.text}")
+                return None
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error al obtener eventos del usuario {id}: {e}")
+            return None
 
