@@ -11,6 +11,7 @@ from flask import Flask, render_template, request, redirect, url_for, send_from_
 import os
 from classes.gpiosManager import GpiosManager
 from werkzeug.utils import secure_filename
+
 import logging
 from classes.Filters import ExcludePathsFilter
 
@@ -25,11 +26,12 @@ api_url = os.getenv("API_URL")
 tenant = os.getenv("TENANT_ID")
 username = os.getenv("USERNAME")
 password = os.getenv("PASSWORD")
-
+bussines = os.getenv("NAME",'Subly')
 # Datos de ISAPI
 isapi_url = os.getenv("ISAPI_URL")
 isapi_username = os.getenv("ISAPI_USERNAME")
 isapi_password = os.getenv("ISAPI_PASSWORD")
+
 
 subly = SublyBackend(tenant, api_url, username, password)
 isapi = HikVision(isapi_url, isapi_username, isapi_password)
@@ -40,6 +42,7 @@ EXCLUDED_PATHS = ["/progress","/search-users"]
 werkzeug_logger = logging.getLogger('werkzeug')
 werkzeug_logger.addFilter(ExcludePathsFilter(EXCLUDED_PATHS))
 manager = GpiosManager()
+
 
 def update_db_now():
     global progress_value
@@ -299,6 +302,36 @@ def get_progress():
     global progress_value
     return jsonify({"progress": progress_value})
 
+# @app.route("/api/operations", methods=["POST"])
+# def operations():
+#     data = request.get_json(silent=True) or {}
+#     dni = (data.get("dni") or "").strip()
+#     if not dni:
+#         return jsonify(error="dni requerido"), 400
+#     db.delete_subscription(dni=dni)
+#     return jsonify(status="deleted", dni=dni), 200
+
+
+@app.route("/api/operations", methods=["POST"])
+def operations():
+    params = request.get_json()
+    if not params:
+        return jsonify({"status":"error","msg": "No se recibió JSON","name":bussines}), 400
+    if params['tenant'] != tenant:
+        return jsonify({"status":"error","msg":"no coincide el tenant","name":bussines})
+    if params.get('dni') == None:
+        return jsonify({"status":"error","msg":"no enviaste la cedula","name":bussines})
+    if params.get('operation') ==None:
+        return jsonify({"status":"error","msg":"no enviaste la accion","name":bussines})
+    else:
+        if params['operation'] == 'delete':
+            if db.get_subscription_by_dni(params['dni']):
+                db.delete_subscription(params['dni'])
+                return jsonify({"status":"success","msg":"usuario eliminado con exito","name":bussines})
+            else:
+                return jsonify({"status":"error","msg":"no existe ese usuario en el registro local","name":bussines})
+        else:
+            return jsonify({"status":"error","msg":"no existe esa operacion","name":bussines})
 
 
 if __name__ == '__main__':
