@@ -9,7 +9,8 @@ isapi_password = os.getenv("ISAPI_PASSWORD")
 
 
 isapi = HikVision(isapi_url, isapi_username, isapi_password)
-result = isapi.get_all_image_device()
+for i in range(0,10):
+    result = isapi.get_all_image_device(number=i)
 
 
 

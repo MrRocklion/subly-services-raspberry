@@ -139,7 +139,7 @@ class HikVision():
             logger.error(f"Error al traer imagen {e}")
             return False
 
-    def get_all_image_device(self):
+    def get_all_image_device(self,number):
         url = f"{self.api_url}/ISAPI/AccessControl/UserInfo/Search?format=json"
         try:
             response = requests.post(
@@ -149,7 +149,7 @@ class HikVision():
                     "UserInfoSearchCond":{
                         "searchID":"sdgdshw234",
                         "maxResults":2000,
-                        "searchResultPosition":0
+                        "searchResultPosition":number
                         }
                         }),
                 auth=HTTPDigestAuth(self.user, self.password),

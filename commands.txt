@@ -1,5 +1,5 @@
                                                                                        
-scp -r  admin@192.168.0.100:/home/admin/subly-services-raspberry/dataset ./
+scp -r  admin@192.168.110.58:/home/admin/subly-services-raspberry/dataset ./
 sudo nano /etc/systemd/system/subly_services_raspberry.service
 [Unit]
 Description=Aplicacion para controlar los torniquetes hikvision
