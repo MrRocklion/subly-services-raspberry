@@ -147,9 +147,9 @@ class HikVision():
                 headers={},
                 data=json.dumps({
                     "UserInfoSearchCond":{
-                        "searchID":"sdgdshw234",
-                        "maxResults":2000,
-                        "searchResultPosition":number
+                        "searchID":f"sdgdshw234{number}",
+                        "maxResults":20,
+                        "searchResultPosition":number*20
                         }
                         }),
                 auth=HTTPDigestAuth(self.user, self.password),
