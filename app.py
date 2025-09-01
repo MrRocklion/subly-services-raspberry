@@ -330,6 +330,8 @@ def operations():
                 return jsonify({"status":"success","msg":"usuario eliminado con exito","name":bussines})
             else:
                 return jsonify({"status":"error","msg":"no existe ese usuario en el registro local","name":bussines})
+        if params['operation'] == 'register':
+            subly.get_user_info(params['dni'])
         else:
             return jsonify({"status":"error","msg":"no existe esa operacion","name":bussines})
 

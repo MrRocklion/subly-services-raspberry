@@ -76,8 +76,8 @@ class SublyBackend:
             logger.error(f"Error al obtener usuarios: {e}")
         return []
     
-    def get_user_info(self,user_id):
-        url = f"{self.api_url}/api/users/{user_id}"
+    def get_user_info(self,user_dni):
+        url = f"{self.api_url}/api/users/{user_dni}"
         headers = {
             'x-tenant-id': self.tenant,
             'Authorization': f'Bearer {self.jwt}',
@@ -96,3 +96,4 @@ class SublyBackend:
         except Exception as e:
             logger.error(f"Error al obtener usuarios: {e}")
         return []
+    
