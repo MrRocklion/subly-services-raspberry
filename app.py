@@ -1,6 +1,6 @@
 import threading
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta,timezone
 from classes.HikVision import HikVision
 from classes.Subly import SublyBackend
 from classes.Logger import logger
@@ -43,28 +43,21 @@ werkzeug_logger = logging.getLogger('werkzeug')
 werkzeug_logger.addFilter(ExcludePathsFilter(EXCLUDED_PATHS))
 manager = GpiosManager()
 
-def set_to_4am_keep_tz(s):
-    """
-    Recibe: 'YYYY-MM-DD HH:MM:SS+00' (o +HH, +HH:MM)
-    Devuelve: 'YYYY-MM-DD 04:00:00+HH:MM'
-    """
-    iso = s.replace(" ", "T")
-    iso = re.sub(r'([+-]\d{2})$', r'\1:00', iso)
-    dt = datetime.fromisoformat(iso)
-    dt = dt.replace(hour=4, minute=0, second=0, microsecond=0)
-    return dt.isoformat().replace("T", " ")
+def _parse_utc_z(s):
+    # Acepta con o sin milisegundos; convierte 'Z' a '+00:00' para Python
+    return datetime.fromisoformat(s.replace("Z", "+00:00"))
 
-def set_to_11pm_keep_tz(s):
-    """
-    Cambia solo la hora a 23:00 manteniendo fecha y offset originales.
-    Acepta: 'YYYY-MM-DD HH:MM:SS+00' (o +HH, +HH:MM)
-    Devuelve: 'YYYY-MM-DD 23:00:00+HH:MM'
-    """
-    iso = s.replace(" ", "T")
-    iso = re.sub(r'([+-]\d{2})$', r'\1:00', iso)
-    dt = datetime.fromisoformat(iso)
-    dt = dt.replace(hour=23, minute=0, second=0, microsecond=0)
-    return dt.isoformat().replace("T", " ")
+def _set_time_utc_z(s, hour, minute=0):
+    dt = _parse_utc_z(s).astimezone(timezone.utc)
+    dt = dt.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    # Regresamos en el MISMO estilo con milisegundos .000Z
+    return dt.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+def to_4am_utc_z(s):
+    return _set_time_utc_z(s, 4, 0)
+
+def to_11pm_utc_z(s):
+    return _set_time_utc_z(s, 23, 0)
 
 def update_db_now():
     global progress_value
@@ -78,8 +71,8 @@ def update_db_now():
                 logger.warning(f"Usuario {user.get('user_id')} no tiene DNI, se omitirá.")
                 continue
             user['dni'] = user['dni'].strip()
-            # user['start_date'] = set_to_4am_keep_tz(user['start_date'])
-            # user['end_date'] = set_to_11pm_keep_tz(user['end_date'])
+            user['start_date'] = to_4am_utc_z(user['start_date'])
+            user['end_date'] = to_11pm_utc_z(user['end_date'])
             users.append(user)
         admins_subly = subly.get_admins()
         admins = []
