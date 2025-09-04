@@ -11,7 +11,7 @@ from flask import Flask, render_template, request, redirect, url_for, send_from_
 import os
 from classes.gpiosManager import GpiosManager
 from werkzeug.utils import secure_filename
-
+import re
 import logging
 from classes.Filters import ExcludePathsFilter
 
@@ -43,6 +43,28 @@ werkzeug_logger = logging.getLogger('werkzeug')
 werkzeug_logger.addFilter(ExcludePathsFilter(EXCLUDED_PATHS))
 manager = GpiosManager()
 
+def set_to_4am_keep_tz(s):
+    """
+    Recibe: 'YYYY-MM-DD HH:MM:SS+00' (o +HH, +HH:MM)
+    Devuelve: 'YYYY-MM-DD 04:00:00+HH:MM'
+    """
+    iso = s.replace(" ", "T")
+    iso = re.sub(r'([+-]\d{2})$', r'\1:00', iso)
+    dt = datetime.fromisoformat(iso)
+    dt = dt.replace(hour=4, minute=0, second=0, microsecond=0)
+    return dt.isoformat().replace("T", " ")
+
+def set_to_11pm_keep_tz(s):
+    """
+    Cambia solo la hora a 23:00 manteniendo fecha y offset originales.
+    Acepta: 'YYYY-MM-DD HH:MM:SS+00' (o +HH, +HH:MM)
+    Devuelve: 'YYYY-MM-DD 23:00:00+HH:MM'
+    """
+    iso = s.replace(" ", "T")
+    iso = re.sub(r'([+-]\d{2})$', r'\1:00', iso)
+    dt = datetime.fromisoformat(iso)
+    dt = dt.replace(hour=23, minute=0, second=0, microsecond=0)
+    return dt.isoformat().replace("T", " ")
 
 def update_db_now():
     global progress_value
@@ -56,6 +78,8 @@ def update_db_now():
                 logger.warning(f"Usuario {user.get('user_id')} no tiene DNI, se omitirá.")
                 continue
             user['dni'] = user['dni'].strip()
+            user['start_date'] = set_to_4am_keep_tz(user['start_date'])
+            user['end_date'] = set_to_11pm_keep_tz(user['end_date'])
             users.append(user)
         admins_subly = subly.get_admins()
         admins = []
