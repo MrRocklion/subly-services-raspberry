@@ -180,7 +180,7 @@ def handle_new_subscription(data):
             if db.get_subscription_by_dni(data['dni'].strip()):
                 db.update_subscription_dates(
                     data['dni'].strip(),
-                    data['end_date'],
+                    to_11pm_utc_z(data['end_date']),
                     data['name'],
                     data['lastname']
                 )
